@@ -69,6 +69,7 @@ public class ExpressionParser {
   public static final String GEO_WITHIN = "$geoWithin";
   public static final String GEO_INTERSECTS = "$geoIntersects";
   public static final String SLICE = "$slice";
+  public static final String BITS_ALL_SET = "$bitsAllSet";
   public static final Filter AllFilter = new Filter() {
     @Override
     public boolean apply(DBObject o) {
@@ -315,7 +316,14 @@ public class ExpressionParser {
 
           return createTypeFilter(path, type.intValue());
         }
-      }
+      },
+      new BasicFilterFactory(BITS_ALL_SET) {
+          @Override
+          boolean compare(Object queryValue, Object storedValue) {
+            Number mask = typecast(command + " clause", queryValue, Number.class);
+            return (storedValue != null) && (typecast("value", storedValue, Number.class).longValue() & mask.longValue()) == mask.longValue();
+          }
+        }
   );
 
   public ObjectComparator objectComparator(int sortDirection) {
